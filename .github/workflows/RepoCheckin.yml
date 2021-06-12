@@ -21,7 +21,13 @@ jobs:
 
       - name: Pester Tests
         shell: pwsh
-        run: Invoke-Pester -Passthru | Export-CliXml -Path Unit.Tests.xml
+        run: |
+          # Setting the powershellgallery as a trusted gallery
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-module Pester -Force
+          # and becuase of the required module bug.  ImportExcel needs to be installed.
+          Install-Module ImportExcel -Force
+          Invoke-Pester -Passthru | Export-CliXml -Path Unit.Tests.xml
 
       - name: Upload test results
         uses: actions/upload-artifact@v2
@@ -68,14 +74,19 @@ jobs:
       - name: UpdateVersion
         shell: pwsh
         run: |
+          # Setting the powershellgallery as a trusted gallery
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          # and becuase of the required module bug.  ImportExcel needs to be installed.
+          Install-Module ImportExcel -Force
           Update-ModuleManifest -Path ".\$($env:GITHUB_REPOSITORY.tolower().split('/')[1]).psd1" -ModuleVersion ${{steps.increaseVer.outputs.version}}
+                   
                     
       - name: UpdateReadmeVersionBadge
-        uses: jeffbuenting/UpdateCustomBadge@jeffbuenting-patch-1
-        with:
-          filename: 'README.md'
-          label: 'Version'
-          message: ${{ steps.IncreaseVer.outputs.version }}
+        shell: pwsh
+        run: |
+          $Readme = Get-Content 'README.md'
+          $Readme =  $Readme -replace "Version-\d+\.\d+\.\d+-brightgreen", "Version-${{ steps.IncreaseVer.outputs.version }}-brightgreen"
+          $Readme | set-content 'README.md'
           
       - name: Commit
         if: ${{ success() }}
