@@ -32,3 +32,15 @@ jobs:
 
       - name: do not push to main
         run: echo "MAIN Branch -- Do not push directly to main.  Push to a different branch and submit a Pull Request to Main."
+
+      - uses: actions/checkout@v2
+
+      - name: Reset Push to previous Commit
+        run: |
+          cd "${GITHUB_WORKSPACE}"
+
+          git branch ${GITHUB_REF}
+          git config --global user.name 'github actions'      
+          git config --global user.email 'actions@github.com'
+          git reset --hard HEAD~1
+          git push --force
