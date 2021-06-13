@@ -25,7 +25,7 @@ jobs:
         id: GetRepoVer
         shell: pwsh
         run: |
-          $Ver = get-content 'README.md' | select-string -pattern "Version-(\d+\.\d+\.\d+)-brightgreen").matches.groups[1].value
+          $Ver = (get-content 'README.md' | select-string -pattern "Version-(\d+\.\d+\.\d+)-brightgreen").matches.groups[1].value
           Write-Output "::set-output name=version::$Ver"
         
       - name: tag
