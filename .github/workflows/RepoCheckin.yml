@@ -14,7 +14,7 @@ on:
 jobs:
   unittest:
     name: Unit Test but only if not push to branch
-    if: "((github.ref != 'refs/heads/main') || (github.ref == 'refs/heads/main' && github.actor == 'github actions') || (github.event_name == 'pull_request')) && !contains(github.event.commits[0].message, '[skip ci]')"
+    if: "((github.ref != 'refs/heads/main') || (github.event_name == 'pull_request')) && !contains(github.event.commits[0].message, '[skip ci]')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -119,7 +119,7 @@ jobs:
 
   DoNotPushtoMAIN:
     name: Do not push to MAIN branch
-    if: "github.ref == 'refs/heads/main' && github.actor != 'github actions' "
+    if: "github.ref == 'refs/heads/main' && !contains(github.event.commits[0].message, '[skip ci]')"
     runs-on: ubuntu-latest
     steps:
       - name: Display branch
