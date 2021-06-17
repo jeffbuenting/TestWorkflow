@@ -19,12 +19,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Display branch
-        run: echo "Branch = $GITHUB_REF"
-
-      - name: Display Actor
-        run: echo "actor = $GITHUB_ACTOR"
-
       - name: Pester Tests
         shell: pwsh
         run: |
@@ -104,30 +98,24 @@ jobs:
           git commit -am "skip ci - Commit Updated Version Files in Repo to: ${{steps.IncreaseVer.outputs.version}}"
           git push
 
-  # FailedPRPesterTest:
-  #   name: Close PR after failed tests
-  #   needs: unittest
-  #   if: failure() && github.event_name == 'pull_request'
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: PR info
-  #       run: echo "PR number = ${{ github.event.number }}"
+  FailedPRPesterTest:
+    name: Close PR after failed tests
+    needs: unittest
+    if: failure() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: PR info
+        run: echo "PR number = ${{ github.event.number }}"
     
-  #     - name: Close Pull
-  #       run: |
-  #         gh pr close ${{ github.event.number }}
+      - name: Close Pull
+        run: |
+          gh pr close ${{ github.event.number }}
 
   DoNotPushtoMAIN:
     name: Do not push to MAIN branch
     if: "github.ref == 'refs/heads/main' && !contains(github.event.commits[0].message, '[skip ci]')"
     runs-on: ubuntu-latest
     steps:
-      - name: Display branch
-        run: echo "Branch = $GITHUB_REF"
-
-      - name: Display Actor
-        run: echo "actor = $GITHUB_ACTOR"
-
       - name: do not push to main
         run: echo "MAIN Branch -- Do not push directly to main.  Push to a different branch and submit a Pull Request to Main."
 
