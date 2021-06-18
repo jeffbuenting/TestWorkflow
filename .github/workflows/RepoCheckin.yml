@@ -109,6 +109,8 @@ jobs:
     
       - name: Close Pull
         run: |
+          echo ${{secrets.GITHUB_TOKEN}} >> token.txt
+          gh auth login --with-token < token.txt
           gh pr close ${{ github.event.number }}
 
   DoNotPushtoMAIN:
@@ -122,7 +124,7 @@ jobs:
       - name: Verbose
         run: |
           echo "Branch = ${{github.ref}}"
-          echo "event name = ${{github.event_name}}
+          echo "event name = ${{github.event_name}}"
           echo "commit message = ${{github.event.commits[0].message}}"
 
 
