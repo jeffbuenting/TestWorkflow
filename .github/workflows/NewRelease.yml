@@ -28,12 +28,12 @@ jobs:
           $Ver = (get-content 'README.md' | select-string -pattern "Version-(\d+\.\d+\.\d+)-brightgreen").matches.groups[1].value
           Write-Output "::set-output name=version::$Ver"
         
-      - name: Create Release and tag
-        run: |
-          echo ${{secrets.GITHUB_TOKEN}} >> token.txt
-          gh auth login --with-token < token.txt
-          gh auth status
-          gh release create v${{ steps.GetRepoVer.outputs.version }}
+      # - name: Create Release and tag
+      #   run: |
+      #     echo ${{secrets.GITHUB_TOKEN}} >> token.txt
+      #     gh auth login --with-token < token.txt
+      #     gh auth status
+      #     gh release create v${{ steps.GetRepoVer.outputs.version }}
     
   notmainbranch:
     name:  not the main branch do not tag
