@@ -125,7 +125,8 @@ jobs:
         run: |
           echo "Branch = ${{github.ref}}"
           echo "event name = ${{github.event_name}}"
-          echo "commit message = ${{github.event.commits[0].message}}"
+          echo "commit message[0] = ${{github.event.commits[0].message}}"
+          echo "commit message = ${{github.event.commits.message}}"
           echo "actor = ${{github.actor}}"
           
 
@@ -136,13 +137,21 @@ jobs:
 
       - name: Reset Push to previous Commit
         run: |
+          CommitMessage = git log main --all --oneline -n 1 --format:%B
 
-          echo "Resetting MAIN to remove this push."
-          git log main --all --oneline -n 1 --skip 1
 
-          git config --global user.name 'github actions'      
-          git config --global user.email 'actions@github.com'
+          echo $CommitMessage
 
-          git reset --hard HEAD~1
-          # git commit -m 'skip ci - reset push direct to main branch.'
-          git push --force
+          if [[ $CommitMessage == "[SKIP CI]"* ]]; then
+            echo "Allowing Push" 
+          else
+            echo "Resetting MAIN to remove this push." 
+
+            git config --global user.name 'github actions'      
+            git config --global user.email 'actions@github.com'
+
+
+            git reset --hard HEAD~1
+            # git commit -m 'skip ci - reset push direct to main branch.'
+            git push --force
+          fi
