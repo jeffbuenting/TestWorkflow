@@ -141,7 +141,7 @@ jobs:
 
           echo "==========="
 
-          if [[ "${git log main --all --oneline -n 1 --format=%B}"" == "[SKIP CI]"* ]]; then
+          if [[ "${git log main --all --oneline -n 1 --format=%B}"" == "skip ci"* ]]; then
             echo "Allowing Push" 
           else
             echo "Resetting MAIN to remove this push." 
