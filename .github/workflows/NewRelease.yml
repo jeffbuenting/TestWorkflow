@@ -44,6 +44,7 @@ jobs:
 
       - name: Create Release and tag
         run: |
+          gh auth login --with-token ${{ secrets.GITHUB_TOKEN }}
           gh release create v${{ steps.GetRepoVer.outputs.version }}
     
   notmainbranch:
