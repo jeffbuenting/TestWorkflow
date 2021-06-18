@@ -137,19 +137,17 @@ jobs:
 
       - name: Reset Push to previous Commit
         run: |
-          CommitMessage = git log main --all --oneline -n 1 --format:%B
+          git log main --all --oneline -n 1 --format=%B
 
+          echo "==========="
 
-          echo $CommitMessage
-
-          if [[ $CommitMessage == "[SKIP CI]"* ]]; then
+          if [[ "${git log main --all --oneline -n 1 --format=%B}"" == "[SKIP CI]"* ]]; then
             echo "Allowing Push" 
           else
             echo "Resetting MAIN to remove this push." 
 
             git config --global user.name 'github actions'      
             git config --global user.email 'actions@github.com'
-
 
             git reset --hard HEAD~1
             # git commit -m 'skip ci - reset push direct to main branch.'
