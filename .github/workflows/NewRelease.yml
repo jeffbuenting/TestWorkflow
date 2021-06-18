@@ -45,7 +45,7 @@ jobs:
       - name: Create Release and tag
         run: |
           echo ${{secrets.GITHUB_TOKEN}} >> token.txt
-          gh auth login --with-token token.txt
+          gh auth login --with-token < token.txt
           gh auth status
           gh release create v${{ steps.GetRepoVer.outputs.version }}
     

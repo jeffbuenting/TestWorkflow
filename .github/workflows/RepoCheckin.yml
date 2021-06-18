@@ -119,6 +119,13 @@ jobs:
       - name: do not push to main
         run: echo "MAIN Branch -- Do not push directly to main.  Push to a different branch and submit a Pull Request to Main."
 
+      - name: Verbose
+        run: |
+          echo "Branch = ${{github.ref}}"
+          echo "event name = ${{github.event_name}}
+          echo "commit message = ${{github.event.commits[0].message}}"
+
+
       - uses: actions/checkout@v2
         with:
           fetch-depth: 3
