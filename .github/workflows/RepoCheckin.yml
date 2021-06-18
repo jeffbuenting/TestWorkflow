@@ -126,6 +126,8 @@ jobs:
           echo "Branch = ${{github.ref}}"
           echo "event name = ${{github.event_name}}"
           echo "commit message = ${{github.event.commits[0].message}}"
+          echo "actor = ${{github.actor}}"
+          
 
 
       - uses: actions/checkout@v2
