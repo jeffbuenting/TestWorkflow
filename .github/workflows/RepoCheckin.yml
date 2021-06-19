@@ -151,5 +151,5 @@ jobs:
 
             git reset --hard HEAD~1
             # git commit -m 'skip ci - reset push direct to main branch.'
-            git push --force
+            git push
           }
