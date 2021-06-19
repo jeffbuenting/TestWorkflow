@@ -4,44 +4,152 @@ on:
   push:
     branches:
       - '**'
+  
+  pull_request:
+    branches:
+      - '**'
+
+  workflow_dispatch:
 
 jobs:
   unittest:
     name: Unit Test but only if not push to branch
-    if: "((github.ref != 'refs/heads/main') || (github.ref == 'refs/heads/main' && github.actor == 'github actions')) && !contains(github.event.commits[0].message, '[skip ci]')"
+    if: "((github.ref != 'refs/heads/main') || (github.event_name == 'pull_request')) && !contains(github.event.commits[0].message, '[skip ci]')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 
-      - name: Display branch
-        run: echo "Branch = $GITHUB_REF"
+      - name: Pester Tests
+        shell: pwsh
+        run: |
+          # Setting the powershellgallery as a trusted gallery
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-module Pester -Force
+          # and becuase of the required module bug.  ImportExcel needs to be installed.
+          Install-Module ImportExcel -Force
+          Invoke-Pester -Passthru | Export-CliXml -Path Unit.Tests.xml
 
-      - name: Display Actor
-        run: echo "actor = $GITHUB_ACTOR"
+      - name: Upload test results
+        uses: actions/upload-artifact@v2
+        with:
+          name: ubuntu-Unit-Tests
+          path: Unit.Tests.xml  
+
+  UpdateModuleVersion:
+    name: Updates version and returns it
+    needs: unittest
+    if: success() && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2  
+
+      - name: GetVer PS
+        id: GetVer
+        shell: pwsh
+        run: |
+          $ModuleManifest = Get-Content "$($env:GITHUB_REPOSITORY.tolower().split('/')[1]).psd1"
+          $Ver = ($ModuleManifest | Select-String -Pattern "ModuleVersion = '(.*)'").matches.groups[1].value
+          Write-Output "::set-output name=version::$Ver"
+          Write-Output "::set-output name=versiontype::modulemanifest"
+
+      - name: IncreaseVersion
+        id: IncreaseVer
+        shell: bash
+        run: |
+            CurVer=${{ steps.GetVer.outputs.version }}
+            IFS='.'
+            read -a SplitVer <<<"$CurVer"
+            Major=$((SplitVer[0]))
+            Minor=$((SplitVer[1]))
+            Build="$((SplitVer[2] + 1))"
+            NewVer="$Major.$Minor.$Build"
+            unset IFS
+            echo "::set-output name=version::$NewVer"
+         
+      - name: Show Version
+        run: |
+          echo "NewVer = ${{ steps.IncreaseVer.outputs.version }}"
+
+      - name: UpdateVersion
+        shell: pwsh
+        run: |
+          # Setting the powershellgallery as a trusted gallery
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          # and becuase of the required module bug.  ImportExcel needs to be installed.
+          Install-Module ImportExcel -Force
+          Update-ModuleManifest -Path ".\$($env:GITHUB_REPOSITORY.tolower().split('/')[1]).psd1" -ModuleVersion ${{steps.increaseVer.outputs.version}}
+                   
+                    
+      - name: UpdateReadmeVersionBadge
+        shell: pwsh
+        run: |
+          $Readme = Get-Content 'README.md'
+          $Readme =  $Readme -replace "Version-\d+\.\d+\.\d+-brightgreen", "Version-${{ steps.IncreaseVer.outputs.version }}-brightgreen"
+          $Readme | set-content 'README.md'
+          
+      - name: Commit
+        if: ${{ success() }}
+        run: |
+          git status
+          git config --global user.name 'github actions'      
+          git config --global user.email 'actions@github.com'
+          git ls-files --others --exclude-standard
+          git commit -am "skip ci - Commit Updated Version Files in Repo to: ${{steps.IncreaseVer.outputs.version}}"
+          git push
+
+  FailedPRPesterTest:
+    name: Close PR after failed tests
+    needs: unittest
+    if: failure() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: PR info
+        run: echo "PR number = ${{ github.event.number }}"
+    
+      - name: Close Pull
+        run: |
+          echo ${{secrets.GITHUB_TOKEN}} >> token.txt
+          gh auth login --with-token < token.txt
+          gh pr close ${{ github.event.number }}
 
   DoNotPushtoMAIN:
     name: Do not push to MAIN branch
-    if: "github.ref == 'refs/heads/main' && github.actor != 'github actions' "
+    if: "github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && !contains(github.event.commits[0].message, '[skip ci]')"
     runs-on: ubuntu-latest
     steps:
-      - name: Display branch
-        run: echo "Branch = $GITHUB_REF"
-
-      - name: Display Actor
-        run: echo "actor = $GITHUB_ACTOR"
-
       - name: do not push to main
         run: echo "MAIN Branch -- Do not push directly to main.  Push to a different branch and submit a Pull Request to Main."
+
+      - name: Verbose
+        run: |
+          echo "Branch = ${{github.ref}}"
+          echo "event name = ${{github.event_name}}"
+          echo "commit message[0] = ${{github.event.commits[0].message}}"
+          echo "commit message = ${{github.event.commits.message}}"
+          echo "actor = ${{github.actor}}"
 
       - uses: actions/checkout@v2
         with:
           fetch-depth: 3
 
       - name: Reset Push to previous Commit
+        shell: pwsh
         run: |
-          git log --oneline 
-          git config --global user.name 'github actions'      
-          git config --global user.email 'actions@github.com'
+          $Message = git log main --all --oneline -n 1 --format=%B
 
-          git reset --hard HEAD~1
-          git push --force
+          Write-Output "==========="
+
+          if ( $Message -like "Merge*" ) {
+            Write-Output "Allowing Push" 
+          }
+          else {
+            Write-Output "Resetting MAIN to remove this push." 
+
+            git config --global user.name 'github actions'      
+            git config --global user.email 'actions@github.com'
+
+            git reset --hard HEAD~1
+            # git commit -m 'skip ci - reset push direct to main branch.'
+            git push --force
+          }
