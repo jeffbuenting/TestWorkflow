@@ -113,43 +113,43 @@ jobs:
           gh auth login --with-token < token.txt
           gh pr close ${{ github.event.number }}
 
-  DoNotPushtoMAIN:
-    name: Do not push to MAIN branch
-    if: "github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && !contains(github.event.commits[0].message, '[skip ci]')"
-    runs-on: ubuntu-latest
-    steps:
-      - name: do not push to main
-        run: echo "MAIN Branch -- Do not push directly to main.  Push to a different branch and submit a Pull Request to Main."
+  # DoNotPushtoMAIN:
+  #   name: Do not push to MAIN branch
+  #   if: "github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && !contains(github.event.commits[0].message, '[skip ci]')"
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: do not push to main
+  #       run: echo "MAIN Branch -- Do not push directly to main.  Push to a different branch and submit a Pull Request to Main."
 
-      - name: Verbose
-        run: |
-          echo "Branch = ${{github.ref}}"
-          echo "event name = ${{github.event_name}}"
-          echo "commit message[0] = ${{github.event.commits[0].message}}"
-          echo "commit message = ${{github.event.commits.message}}"
-          echo "actor = ${{github.actor}}"
+  #     - name: Verbose
+  #       run: |
+  #         echo "Branch = ${{github.ref}}"
+  #         echo "event name = ${{github.event_name}}"
+  #         echo "commit message[0] = ${{github.event.commits[0].message}}"
+  #         echo "commit message = ${{github.event.commits.message}}"
+  #         echo "actor = ${{github.actor}}"
 
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 3
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         fetch-depth: 3
 
-      - name: Reset Push to previous Commit
-        shell: pwsh
-        run: |
-          $Message = git log main --all --oneline -n 1 --format=%B
+  #     - name: Reset Push to previous Commit
+  #       shell: pwsh
+  #       run: |
+  #         $Message = git log main --all --oneline -n 1 --format=%B
 
-          Write-Output "==========="
+  #         Write-Output "==========="
 
-          if ( $Message -like "Merge*" ) {
-            Write-Output "Allowing Push" 
-          }
-          else {
-            Write-Output "Resetting MAIN to remove this push." 
+  #         if ( $Message -like "Merge*" ) {
+  #           Write-Output "Allowing Push" 
+  #         }
+  #         else {
+  #           Write-Output "Resetting MAIN to remove this push." 
 
-            git config --global user.name 'github actions'      
-            git config --global user.email 'actions@github.com'
+  #           git config --global user.name 'github actions'      
+  #           git config --global user.email 'actions@github.com'
 
-            git reset --hard HEAD~1
-            # git commit -m 'skip ci - reset push direct to main branch.'
-            git push --force
-          }
+  #           git reset --hard HEAD~1
+  #           # git commit -m 'skip ci - reset push direct to main branch.'
+  #           git push
+  #         }
