@@ -3,8 +3,8 @@
 
 name: newrelease
 
+# ----- workflow runs only when a PR is closed on the main branch.
 on:
-
   pull_request:
     types: [ closed ]
     branches:
@@ -13,6 +13,8 @@ on:
   workflow_dispatch:
 
 jobs:
+
+# ----- Creates a new release in the main branch named with the version.
   tagmain:
     name: tag main branch 
     if: github.base_ref == 'main' && github.event.pull_request.merged == true
@@ -20,7 +22,8 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2        
-        
+      
+      # ----- grab the version from the version badge in the readme.md
       - name: GetRepoVersion
         id: GetRepoVer
         shell: pwsh
@@ -28,13 +31,15 @@ jobs:
           $Ver = (get-content 'README.md' | select-string -pattern "Version-(\d+\.\d+\.\d+)-brightgreen").matches.groups[1].value
           Write-Output "::set-output name=version::$Ver"
         
+      # ----- had to push the token to a text file so it can be ready by github cli.
       - name: Create Release and tag
         run: |
           echo ${{secrets.GITHUB_TOKEN}} >> token.txt
           gh auth login --with-token < token.txt
           gh auth status
           gh release create v${{ steps.GetRepoVer.outputs.version }}
-    
+
+ # ----- safety.  Not really needed as this only runs on the main branch. 
   notmainbranch:
     name:  not the main branch do not tag
     if: github.base_ref != 'main' && github.event.pull_request.merged == true
