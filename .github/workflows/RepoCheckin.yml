@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - '**'
+      - '!main'
   
   pull_request:
     branches:
       - '**'
+    type: [open]
 
   workflow_dispatch:
 
@@ -16,7 +18,8 @@ jobs:
 # ------ This job should run for all PR and Pushes except a PR to main or with a commit message of skip ci.
   unittest:
     name: Unit Test but only if not push to branch
-    if: "((github.ref != 'refs/heads/main') || (github.event_name == 'pull_request')) && !contains(github.event.commits[0].message, '[skip ci]')"
+   # if: "((github.ref != 'refs/heads/main') || (github.event_name == 'pull_request')) && !contains(github.event.commits[0].message, '[skip ci]')"
+   if: "!contains(github.event.commits[0].message, '[skip ci]')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -32,6 +35,7 @@ jobs:
           echo "pusher = ${{github.event.pusher.name}}"
           echo "sender = ${{github.event.sender.login}}"
           echo "actor = ${{github.actor}}"
+          echo "HeadCommit = ${{github.event.headcommit.message}}"
 
       - name: Dump GitHub context
         env:
