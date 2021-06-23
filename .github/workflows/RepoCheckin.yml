@@ -19,7 +19,7 @@ jobs:
   unittest:
     name: Unit Test but only if not push to branch
    # if: "((github.ref != 'refs/heads/main') || (github.event_name == 'pull_request')) && !contains(github.event.commits[0].message, '[skip ci]')"
-    if: "!contains(github.event.commits[0].message, '[skip ci]') && github.event.head_commit.message != 'Merge*'"
+    if: "!contains(github.event.commits[0].message, '[skip ci]') && !contains(github.event.head_commit.message, '[Merge]"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
