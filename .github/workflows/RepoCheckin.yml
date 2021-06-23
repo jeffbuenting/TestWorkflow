@@ -1,5 +1,6 @@
 name: RepoCheckin
 
+# ----- workflow runs for Pushed on any branch but main and any branch PR when opened.
 on:
   push:
     branches:
@@ -15,15 +16,19 @@ on:
 
 jobs:
 
-# ------ This job should run for all PR and Pushes except a PR to main or with a commit message of skip ci.
+# ------ This job runs unit tests.
+# ----- Only runs if the commit message doesn't have skip ci in it.  This is so 'internal' commits don't trigger unit testing.  It will also not run if the Head_commit (I believe this ist
+# ----- the previous commit) message does not contain Merge.  This is so a PR commit message (which begins with Merge) doesn't kick off the unit test.
   unittest:
     name: Unit Test but only if not push to branch
    # if: "((github.ref != 'refs/heads/main') || (github.event_name == 'pull_request')) && !contains(github.event.commits[0].message, '[skip ci]')"
-    if: "!contains(github.event.commits[0].message, '[skip ci]') && !contains(github.event.head_commit.message, '[Merge]')"
+    if: "!contains(github.event.commits[0].message, '[skip ci]') || !contains(github.event.head_commit.message, '[Merge]')"
     runs-on: ubuntu-latest
     steps:
+      # ----- checkout repo
       - uses: actions/checkout@v2
 
+      # ----- used during troubleshooting.  echos various info.  Should not be there in a production workflow
       - name: Verbose
         run: |
           echo "Branch = ${{github.ref}}"
@@ -37,12 +42,14 @@ jobs:
           echo "actor = ${{github.actor}}"
           echo "HeadCommit = ${{github.event.head_commit.message}}"
 
+      # ----- used during troubleshooting.  echos various info.  Should not be there in a production workflow
       # - name: Dump GitHub context
       #   env:
       #     GITHUB_CONTEXT: ${{ toJson(github) }}
       #   run: |
       #     echo "$GITHUB_CONTEXT"
 
+      # ----- This is where the tests are run.  In most of my repos this will be powershell or pester tests.  other languages would use other tests
       - name: Pester Tests
         shell: pwsh
         run: |
@@ -59,6 +66,7 @@ jobs:
           name: ubuntu-Unit-Tests
           path: Unit.Tests.xml  
 
+# ----- Updates the version
   UpdateModuleVersion:
     name: Updates version and returns it
     needs: unittest
@@ -67,20 +75,8 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2  
-      
-# ----- can I do a test to see if there is a PR commit message that matches the push message?  Or commit sha?
 
-      # - name: check git 
-      #   shell: pwsh
-      #   run: |
-      #     $Message = git log main --all --oneline -n 1 --format=%B
-
-      #     Write-Output "==========="
-
-      #     if ( $Message -like "Merge*" ) {
-      #       Write-Output "Allowing Push" 
-      #     }
-
+      # ----- reads the version.  Again in my repos most of the time it will be a powershell module ( But it would be just as easy to use a json file or from readme.md )
       - name: GetVer PS
         id: GetVer
         shell: pwsh
@@ -90,6 +86,7 @@ jobs:
           Write-Output "::set-output name=version::$Ver"
           Write-Output "::set-output name=versiontype::modulemanifest"
 
+      # ----- Increment version
       - name: IncreaseVersion
         id: IncreaseVer
         shell: bash
@@ -108,6 +105,7 @@ jobs:
         run: |
           echo "NewVer = ${{ steps.IncreaseVer.outputs.version }}"
 
+      # ----- update the manifest file ( or json )
       - name: UpdateVersion
         shell: pwsh
         run: |
@@ -117,14 +115,15 @@ jobs:
           Install-Module ImportExcel -Force
           Update-ModuleManifest -Path ".\$($env:GITHUB_REPOSITORY.tolower().split('/')[1]).psd1" -ModuleVersion ${{steps.increaseVer.outputs.version}}
                    
-                    
+      # ----- readme.md in github has a badge that displays the version number.           
       - name: UpdateReadmeVersionBadge
         shell: pwsh
         run: |
           $Readme = Get-Content 'README.md'
           $Readme =  $Readme -replace "Version-\d+\.\d+\.\d+-brightgreen", "Version-${{ steps.IncreaseVer.outputs.version }}-brightgreen"
           $Readme | set-content 'README.md'
-          
+
+      # ----- save changes back to repo   
       - name: Commit
         if: ${{ success() }}
         run: |
@@ -135,6 +134,7 @@ jobs:
           git commit -am "skip ci - Commit Updated Version Files in Repo to: ${{steps.IncreaseVer.outputs.version}}"
           git push
 
+# ----- if the workflow was triggered by a PR and the unit test failed.  Close the PR without Merging
   FailedPRPesterTest:
     name: Close PR after failed tests
     needs: unittest
