@@ -3,7 +3,7 @@
 ---
 
 
-![Version](https://img.shields.io/badge/Version-2.0.47-brightgreen)
+![Version](https://img.shields.io/badge/Version-2.0.49-brightgreen)
 
 
 ---
