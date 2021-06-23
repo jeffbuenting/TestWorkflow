@@ -35,7 +35,7 @@ jobs:
           echo "pusher = ${{github.event.pusher.name}}"
           echo "sender = ${{github.event.sender.login}}"
           echo "actor = ${{github.actor}}"
-          echo "HeadCommit = ${{github.event.headcommit.message}}"
+          echo "HeadCommit = ${{github.event.head_commit.message}}"
 
       - name: Dump GitHub context
         env:
