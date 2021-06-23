@@ -19,7 +19,7 @@ jobs:
   unittest:
     name: Unit Test but only if not push to branch
    # if: "((github.ref != 'refs/heads/main') || (github.event_name == 'pull_request')) && !contains(github.event.commits[0].message, '[skip ci]')"
-    if: "!contains(github.event.commits[0].message, '[skip ci]')"
+    if: "!contains(github.event.commits[0].message, '[skip ci]') && github.event.head_commit.message != 'Merge*'"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -37,11 +37,11 @@ jobs:
           echo "actor = ${{github.actor}}"
           echo "HeadCommit = ${{github.event.head_commit.message}}"
 
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: |
-          echo "$GITHUB_CONTEXT"
+      # - name: Dump GitHub context
+      #   env:
+      #     GITHUB_CONTEXT: ${{ toJson(github) }}
+      #   run: |
+      #     echo "$GITHUB_CONTEXT"
 
       - name: Pester Tests
         shell: pwsh
