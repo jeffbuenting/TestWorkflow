@@ -22,7 +22,7 @@ jobs:
   unittest:
     name: Unit Test but only if not push to branch
    # if: "((github.ref != 'refs/heads/main') || (github.event_name == 'pull_request')) && !contains(github.event.commits[0].message, '[skip ci]')"
-    if: "!contains(github.event.commits[0].message, '[skip ci]') && !contains(github.event.head_commit.message, '[Merge pull request]')"
+    if: "!contains(github.event.commits[0].message, '[skip ci]') && !contains(github.event.head_commit.message, 'Merge pull request')"
     runs-on: ubuntu-latest
     steps:
       # ----- checkout repo
@@ -31,9 +31,9 @@ jobs:
       # ----- used during troubleshooting.  echos various info.  Should not be there in a production workflow
       - name: Verbose
         run: |
-          echo "if results = ${{!contains(github.event.commits[0].message, '[skip ci]') && !contains(github.event.head_commit.message, '[Merge pull request]')}}"
+          echo "if results = ${{!contains(github.event.commits[0].message, '[skip ci]') && !contains(github.event.head_commit.message, 'Merge pull request')}}"
           echo "SKIP CI = ${{!contains(github.event.commits[0].message, '[skip ci]')}}"
-          echo "Merge = ${{!contains(github.event.head_commit.message, '[Merge pull request]')}}"
+          echo "Merge = ${{!contains(github.event.head_commit.message, 'Merge pull request')}}"
           echo "Branch = ${{github.ref}}"
           echo "PR Base Ref = ${{github.event.pull_request.base.ref}}"
           echo "event name = ${{github.event_name}}"
