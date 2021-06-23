@@ -24,6 +24,7 @@ jobs:
       - name: Verbose
         run: |
           echo "Branch = ${{github.ref}}"
+          echo "PR Base Ref = ${{github.event.pull_request.base.ref}}"
           echo "event name = ${{github.event_name}}"
           echo "base ref = ${{github.base_ref}}"
           echo "sha = ${{github.sha}}"
@@ -31,6 +32,12 @@ jobs:
           echo "pusher = ${{github.event.pusher.name}}"
           echo "sender = ${{github.event.sender.login}}"
           echo "actor = ${{github.actor}}"
+
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          echo "$GITHUB_CONTEXT"
 
       - name: Pester Tests
         shell: pwsh
@@ -56,6 +63,19 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2  
+      
+# ----- can I do a test to see if there is a PR commit message that matches the push message?  Or commit sha?
+
+      # - name: check git 
+      #   shell: pwsh
+      #   run: |
+      #     $Message = git log main --all --oneline -n 1 --format=%B
+
+      #     Write-Output "==========="
+
+      #     if ( $Message -like "Merge*" ) {
+      #       Write-Output "Allowing Push" 
+      #     }
 
       - name: GetVer PS
         id: GetVer
