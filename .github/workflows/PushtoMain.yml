@@ -1,0 +1,22 @@
+name: pushtomain
+
+# ----- workflow runs only when a PR is closed on the main branch.
+on:
+  push:
+    branches:
+      - 'main'
+      
+  workflow_dispatch:
+
+jobs:
+
+# ----- will run if the push did not come from a PR Merge
+  pushtomain:
+    name: check if push is from a PR Merge
+    if: "!contains(github.event.head_commit.message, 'Merge pull request')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: do not push to main
+        run: |
+          echo "In the future do not push directly to main"
+          exit 1
