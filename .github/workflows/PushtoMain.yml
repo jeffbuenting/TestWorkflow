@@ -1,6 +1,6 @@
 name: pushtomain
 
-# ----- workflow runs only when a PR is closed on the main branch.
+# ----- workflow runs on push to the main branch.
 on:
   push:
     branches:
@@ -12,7 +12,7 @@ jobs:
 
 # ----- will run if the push did not come from a PR Merge
   pushtomain:
-    name: check if push is from a PR Merge
+    name: Fail if push directly to main.
     if: "!contains(github.event.head_commit.message, 'Merge pull request')"
     runs-on: ubuntu-latest
     steps:
@@ -20,3 +20,12 @@ jobs:
         run: |
           echo "In the future do not push directly to main"
           exit 1
+
+# ----- Will run if the push came from a PR Merge
+  PRPushtoMain:
+    name: Succeed if Push from PR Merge
+    if: "contains(github.event.head_commit.message, 'Merge pull request')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: push from PR Merge
+        run: echo "Push from PR Merge...."
